@@ -1,15 +1,15 @@
 ## Module Node.IRC
 
-#### `Client`
-
-``` purescript
-type Client = Client
-```
-
 #### `IRC`
 
 ``` purescript
 type IRC = IRC
+```
+
+#### `Setup`
+
+``` purescript
+type Setup e a = ReaderT Client (Aff (irc :: IRC | e)) a
 ```
 
 #### `Host`
@@ -64,16 +64,22 @@ newtype Nick
 runNick :: Nick -> String
 ```
 
-#### `createClient`
+#### `connect`
 
 ``` purescript
-createClient :: forall e. Host -> Nick -> Array Channel -> Eff (irc :: IRC | e) Client
+connect :: forall e. Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC | e) Unit
 ```
 
-#### `say`
+#### `sayChannel`
 
 ``` purescript
-say :: forall e. Client -> Channel -> MessageText -> Eff (irc :: IRC | e) Unit
+sayChannel :: forall e. Channel -> MessageText -> Setup e Unit
+```
+
+#### `sayNick`
+
+``` purescript
+sayNick :: forall e. Client -> Nick -> MessageText -> Eff (irc :: IRC | e) Unit
 ```
 
 #### `ChannelMessageEvent`
@@ -92,6 +98,24 @@ channelMessageFromArgumentsJS :: ArgumentsJS -> ChannelMessageEvent
 
 ``` purescript
 onChannelMessage :: forall e. Client -> Channel -> (ChannelMessageEvent -> Eff (irc :: IRC | e) Unit) -> Eff (irc :: IRC | e) Unit
+```
+
+#### `unsafeFirstArgument`
+
+``` purescript
+unsafeFirstArgument :: forall a. ArgumentsJS -> a
+```
+
+#### `printInspect`
+
+``` purescript
+printInspect :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
+```
+
+#### `inspect`
+
+``` purescript
+inspect :: forall a. a -> String
 ```
 
 

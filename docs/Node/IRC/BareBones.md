@@ -23,6 +23,10 @@ and an array of channels to connect to.
 ```purescript
 createClient "irc.freenode.org" "bot" ["#purescript"]
 ```
+Note that this function can return before the IRC client has managed to
+register, and attempting to send messages before registration will usually
+result in a runtime error. APIs that wrap this one should consider making
+this mistake impossible to make.
 
 #### `ArgumentsJS`
 
