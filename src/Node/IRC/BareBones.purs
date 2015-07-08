@@ -17,13 +17,15 @@ foreign import createClient ::
 -- | A JavaScript `arguments` object.
 foreign import data ArgumentsJS :: *
 
-type IRCCallback e args = { fromArgumentsJS :: ArgumentsJS -> args
-                          , action :: args -> Eff (irc :: IRC | e) Unit
-                          }
+-- | 
+type IRCCallback e args =
+  { fromArgumentsJS :: ArgumentsJS -> args
+  , action :: args -> Eff (irc :: IRC | e) Unit
+  }
 
 -- | The low-level mechanism for having a client react to events.
 -- | ```purescript
--- | addListener client "message" "I'm a bot!"
+-- | addListener client "message" callback
 -- | ```
 foreign import addListener ::
   forall e args. Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit

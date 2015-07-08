@@ -38,6 +38,8 @@ A JavaScript `arguments` object.
 type IRCCallback e args = { fromArgumentsJS :: ArgumentsJS -> args, action :: args -> Eff (irc :: IRC | e) Unit }
 ```
 
+
+
 #### `addListener`
 
 ``` purescript
@@ -46,7 +48,7 @@ addListener :: forall e args. Client -> String -> IRCCallback e args -> Eff (irc
 
 The low-level mechanism for having a client react to events.
 ```purescript
-addListener client "message" "I'm a bot!"
+addListener client "message" callback
 ```
 
 #### `say`
