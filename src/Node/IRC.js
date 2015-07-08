@@ -8,3 +8,5 @@ exports.channelMessageFromArgumentsJS = function (args) {
     text: args[1],
   }
 }
+
+exports.inspect = require('util').inspect

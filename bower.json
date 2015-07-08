@@ -14,6 +14,7 @@
     "purescript-console": "^0.1.0",
     "purescript-aff": "^0.11.0",
     "purescript-transformers": "^0.6.1",
-    "purescript-exceptions": "^0.3.0"
+    "purescript-exceptions": "^0.3.0",
+    "purescript-unsafe-coerce": "^0.1.0"
   }
 }

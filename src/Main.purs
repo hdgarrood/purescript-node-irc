@@ -8,7 +8,7 @@ import Node.IRC
 
 main :: forall e. Eff (irc :: IRC | e) Unit
 main = launchAff $ do
-  let chan = Channel "#purescript-bot-testing"
+  let chan = Channel "#purescript"
   connect (Host "irc.freenode.net") (Nick "pursuit-bot") [chan] $
     sayChannel chan (MessageText "Hello, world")
 
