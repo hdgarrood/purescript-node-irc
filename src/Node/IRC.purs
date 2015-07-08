@@ -39,10 +39,15 @@ createClient :: forall e.
 createClient (Host host) (Nick nick) chans =
   BareBones.createClient host nick (map runChannel chans)
 
-say :: forall e.
+sayChannel :: forall e.
   Client -> Channel -> MessageText -> Eff (irc :: IRC | e) Unit
-say client (Channel chan) (MessageText text) =
+sayChannel client (Channel chan) (MessageText text) =
   BareBones.say client chan text
+
+sayNick :: forall e.
+  Client -> Nick -> MessageText -> Eff (irc :: IRC | e) Unit
+sayNick client (Nick nick) (MessageText text) =
+  BareBones.say client nick text
 
 type ChannelMessageEvent =
   { nick :: Nick
