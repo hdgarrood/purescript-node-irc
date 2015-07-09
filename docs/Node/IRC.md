@@ -9,7 +9,7 @@ type IRC = IRC
 #### `Setup`
 
 ``` purescript
-type Setup e a = ReaderT Client (Aff (irc :: IRC | e)) a
+type Setup e a = ReaderT Client (Aff (irc :: IRC, console :: CONSOLE | e)) a
 ```
 
 #### `Host`
@@ -67,7 +67,7 @@ runNick :: Nick -> String
 #### `connect`
 
 ``` purescript
-connect :: forall e. Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC | e) Unit
+connect :: forall e. Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
 ```
 
 #### `sayChannel`
@@ -88,34 +88,13 @@ sayNick :: forall e. Client -> Nick -> MessageText -> Eff (irc :: IRC | e) Unit
 type ChannelMessageEvent = { nick :: Nick, text :: MessageText }
 ```
 
-#### `channelMessageFromArgumentsJS`
-
-``` purescript
-channelMessageFromArgumentsJS :: ArgumentsJS -> ChannelMessageEvent
-```
-
 #### `onChannelMessage`
 
 ``` purescript
-onChannelMessage :: forall e. Client -> Channel -> (ChannelMessageEvent -> Eff (irc :: IRC | e) Unit) -> Eff (irc :: IRC | e) Unit
+onChannelMessage :: forall e. Channel -> (ChannelMessageEvent -> Setup e Unit) -> Setup e Unit
 ```
 
-#### `unsafeFirstArgument`
-
-``` purescript
-unsafeFirstArgument :: forall a. ArgumentsJS -> a
-```
-
-#### `printInspect`
-
-``` purescript
-printInspect :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
-```
-
-#### `inspect`
-
-``` purescript
-inspect :: forall a. a -> String
-```
+Add a callback to be run every time a message is sent to a particular
+channel.
 
 

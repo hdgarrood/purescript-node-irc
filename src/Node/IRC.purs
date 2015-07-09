@@ -1,8 +1,20 @@
-module Node.IRC where
+module Node.IRC
+  ( IRC()
+  , Setup()
+  , Host(..), runHost
+  , Channel(..), runChannel
+  , MessageText(..), runMessageText
+  , Nick(..), runNick
+  , connect
+  , sayChannel
+  , sayNick
+  , ChannelMessageEvent()
+  , onChannelMessage
+  ) where
 
 import Prelude
 import Control.Monad.Eff
-import Control.Monad.Eff.Console (log, CONSOLE())
+import Control.Monad.Eff.Console (log, print, CONSOLE())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error())
 import Control.Monad.Aff
@@ -22,7 +34,12 @@ type IRC = BareBones.IRC
 -----------
 -- The rest
 
-type Setup e a = ReaderT BareBones.Client (Aff (irc :: IRC | e)) a
+type Setup e a = ReaderT BareBones.Client (Aff (irc :: IRC, console :: CONSOLE | e)) a
+
+runSetup :: forall e a.
+  Setup e Unit -> BareBones.Client -> Eff (irc :: IRC, console :: CONSOLE | e) Unit
+runSetup setup client =
+  runAff print return (runReaderT setup client)
 
 newtype Host = Host String
 
@@ -45,19 +62,20 @@ runNick :: Nick -> String
 runNick (Nick s) = s
 
 connect :: forall e.
-  Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC | e) Unit
+  Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
 connect (Host host) (Nick nick) chans setup = do
   client <- liftEff $ do
     c <- BareBones.createClient host nick (map runChannel chans)
-    -- Add an error handler
-    BareBones.addListener c "error" $
+    -- Add an error handler, because otherwise errors will crash the whole
+    -- program
+    BareBones.addListener c "error"
       { fromArgumentsJS: unsafeFirstArgument, action: printInspect }
     return c
 
   -- Wait for the "registered" event
   makeAff $ \_ success ->
-    let cb = {fromArgumentsJS: const unit, action: success}
-    in BareBones.addListener client "registered" cb
+    BareBones.addListener client "registered"
+      { fromArgumentsJS: const unit, action: success }
 
   -- Set it up
   runReaderT setup client
@@ -77,25 +95,27 @@ type ChannelMessageEvent =
   , text :: MessageText
   }
 
-foreign import channelMessageFromArgumentsJS ::
-  BareBones.ArgumentsJS -> ChannelMessageEvent
-
+-- | Add a callback to be run every time a message is sent to a particular
+-- | channel.
 onChannelMessage :: forall e.
-  BareBones.Client
-  -> Channel
-  -> (ChannelMessageEvent -> Eff (irc :: IRC | e) Unit)
-  -> Eff (irc :: IRC | e) Unit
-onChannelMessage client chan cb =
-  BareBones.addListener client
-                        (toStr chan)
-                        (mkCallback cb)
+  Channel
+  -> (ChannelMessageEvent -> Setup e Unit)
+  -> Setup e Unit
+onChannelMessage chan cb =
+  ReaderT \client -> liftEff $
+    BareBones.addListener client
+                          (toStr chan)
+                          (mkCallback cb client)
   where
   toStr c =
     "message#" <> runChannel c
-  mkCallback =
+  mkCallback cb' client =
     { fromArgumentsJS: channelMessageFromArgumentsJS
-    , action: _
+    , action: \event -> runSetup (cb' event) client
     }
+
+foreign import channelMessageFromArgumentsJS ::
+  BareBones.ArgumentsJS -> ChannelMessageEvent
 
 unsafeFirstArgument :: forall a. BareBones.ArgumentsJS -> a
 unsafeFirstArgument = flip AU.unsafeIndex 0 <<< unsafeCoerce
