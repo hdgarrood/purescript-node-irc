@@ -62,23 +62,27 @@ runNick :: Nick -> String
 runNick (Nick s) = s
 
 connect :: forall e.
-  Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
-connect (Host host) (Nick nick) chans setup = do
+  Host -> Nick -> Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
+connect (Host host) (Nick nick) chan setup = do
   client <- liftEff $ do
-    c <- BareBones.createClient host nick (map runChannel chans)
+    c <- BareBones.createClient host nick [runChannel chan]
     -- Add an error handler, because otherwise errors will crash the whole
     -- program
     BareBones.addListener c "error"
       { fromArgumentsJS: unsafeFirstArgument, action: printInspect }
     return c
 
-  -- Wait for the "registered" event
-  makeAff $ \_ success ->
-    BareBones.addListener client "registered"
-      { fromArgumentsJS: const unit, action: success }
+  waitForEvent client "registered"
+  waitForEvent client "join"
 
   -- Set it up
   runReaderT setup client
+
+  where
+  waitForEvent client eventType =
+    makeAff \_ success ->
+      BareBones.addListener client eventType
+        { fromArgumentsJS: const unit, action: success }
 
 sayChannel :: forall e.
   Channel -> MessageText -> Setup e Unit
@@ -105,13 +109,13 @@ onChannelMessage chan cb =
   ReaderT \client -> liftEff $
     BareBones.addListener client
                           (toStr chan)
-                          (mkCallback cb client)
+                          (mkCallback client)
   where
   toStr c =
-    "message#" <> runChannel c
-  mkCallback cb' client =
+    "message" <> runChannel c
+  mkCallback client =
     { fromArgumentsJS: channelMessageFromArgumentsJS
-    , action: \event -> runSetup (cb' event) client
+    , action: \event -> runSetup (cb event) client
     }
 
 foreign import channelMessageFromArgumentsJS ::
