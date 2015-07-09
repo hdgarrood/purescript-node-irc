@@ -67,7 +67,7 @@ runNick :: Nick -> String
 #### `connect`
 
 ``` purescript
-connect :: forall e. Host -> Nick -> Array Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
+connect :: forall e. Host -> Nick -> Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
 ```
 
 #### `sayChannel`
