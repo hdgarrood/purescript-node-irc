@@ -81,7 +81,7 @@ connect (Host host) (Nick nick) chan setup = do
   where
   waitForEvent client eventType =
     makeAff \_ success ->
-      BareBones.addListener client eventType
+      BareBones.once client eventType
         { fromArgumentsJS: const unit, action: success }
 
 sayChannel :: forall e.
