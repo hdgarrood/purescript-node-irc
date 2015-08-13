@@ -14,16 +14,18 @@ exports.createClient = function (host) {
   }
 }
 
-exports.addListener = function (client) {
-  return function (eventType) {
-    return function (ircCallback) {
-      return function () {
-        client.addListener(eventType, function() {
-          console.log('Got a ' + eventType + ' event!')
-          var args = ircCallback.fromArgumentsJS(arguments)
-          ircCallback.action(args)()
-        })
-        console.log('Added a ' + eventType + ' listener')
+exports.clientMethod = function (method) {
+  return function (client) {
+    return function (eventType) {
+      return function (ircCallback) {
+        return function () {
+          client[method](eventType, function() {
+            console.log('Got a ' + eventType + ' event!')
+            var args = ircCallback.fromArgumentsJS(arguments)
+            ircCallback.action(args)()
+          })
+          console.log('Added a ' + eventType + ' listener')
+        }
       }
     }
   }

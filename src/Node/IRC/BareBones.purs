@@ -1,10 +1,19 @@
-module Node.IRC.BareBones where
+module Node.IRC.BareBones
+  ( IRC()
+  , Client()
+  , createClient
+  , ArgumentsJS()
+  , IRCCallback()
+  , addListener
+  , once
+  , say
+  ) where
 
 import Prelude
 import Control.Monad.Eff
 
-foreign import data Client :: *
 foreign import data IRC :: !
+foreign import data Client :: *
 
 -- | Create an IRC client, by supplying a hostname, nick for the client to use,
 -- | and an array of channels to connect to.
@@ -27,12 +36,32 @@ type IRCCallback e args =
   , action :: args -> Eff (irc :: IRC | e) Unit
   }
 
--- | The low-level mechanism for having a client react to events.
+foreign import clientMethod ::
+  forall e args. String -> Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit
+
+-- | The low-level mechanism for having a client react to events. The second
+-- | argument is the message type. Message types are defined by node-irc.
 -- | ```purescript
 -- | addListener client "message" callback
 -- | ```
-foreign import addListener ::
+addListener ::
   forall e args. Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit
+addListener =
+  clientMethod "addListener"
+
+-- | The low-level mechanism for having a client react to events. The second
+-- | argument is the message type. Message types are defined by node-irc.
+-- |
+-- | This is like `addListener`, except that the callback will be called at
+-- | most once.
+-- |
+-- | ```purescript
+-- | once client "message" callback
+-- | ```
+once ::
+  forall e args. Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit
+once =
+  clientMethod "once"
 
 -- | Say something to a specific channel or nick.
 -- | ```purescript

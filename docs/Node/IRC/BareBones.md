@@ -1,15 +1,15 @@
 ## Module Node.IRC.BareBones
 
-#### `Client`
-
-``` purescript
-data Client :: *
-```
-
 #### `IRC`
 
 ``` purescript
 data IRC :: !
+```
+
+#### `Client`
+
+``` purescript
+data Client :: *
 ```
 
 #### `createClient`
@@ -50,9 +50,26 @@ type IRCCallback e args = { fromArgumentsJS :: ArgumentsJS -> args, action :: ar
 addListener :: forall e args. Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit
 ```
 
-The low-level mechanism for having a client react to events.
+The low-level mechanism for having a client react to events. The second
+argument is the message type. Message types are defined by node-irc.
 ```purescript
 addListener client "message" callback
+```
+
+#### `once`
+
+``` purescript
+once :: forall e args. Client -> String -> IRCCallback e args -> Eff (irc :: IRC | e) Unit
+```
+
+The low-level mechanism for having a client react to events. The second
+argument is the message type. Message types are defined by node-irc.
+
+This is like `addListener`, except that the callback will be called at
+most once.
+
+```purescript
+once client "message" callback
 ```
 
 #### `say`
