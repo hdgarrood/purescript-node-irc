@@ -13,18 +13,16 @@ module Node.IRC
   ) where
 
 import Prelude
-import Control.Monad.Eff
-import Control.Monad.Eff.Console (log, print, CONSOLE())
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (log, logShow, CONSOLE())
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Exception (Error())
-import Control.Monad.Aff
+import Control.Monad.Aff (Aff, makeAff, runAff)
 import Control.Monad.Reader.Trans (ReaderT(..), runReaderT)
-import Control.Monad.Reader.Class (ask)
-import Control.Monad.Error.Class (throwError)
-import qualified Data.Array.Unsafe as AU
 import Unsafe.Coerce (unsafeCoerce)
+import Partial.Unsafe (unsafePartial)
+import Data.Array (unsafeIndex)
 
-import qualified Node.IRC.BareBones as BareBones
+import Node.IRC.BareBones as BareBones
 
 -------------
 -- Re-exports
@@ -36,10 +34,10 @@ type IRC = BareBones.IRC
 
 type Setup e a = ReaderT BareBones.Client (Aff (irc :: IRC, console :: CONSOLE | e)) a
 
-runSetup :: forall e a.
+runSetup :: forall e.
   Setup e Unit -> BareBones.Client -> Eff (irc :: IRC, console :: CONSOLE | e) Unit
 runSetup setup client =
-  runAff print return (runReaderT setup client)
+  void $ runAff logShow pure (runReaderT setup client)
 
 newtype Host = Host String
 
@@ -70,7 +68,7 @@ connect (Host host) (Nick nick) chan setup = do
     -- program
     BareBones.addListener c "error"
       { fromArgumentsJS: unsafeFirstArgument, action: printInspect }
-    return c
+    pure c
 
   waitForEvent client "registered"
   waitForEvent client "join"
@@ -122,7 +120,7 @@ foreign import channelMessageFromArgumentsJS ::
   BareBones.ArgumentsJS -> ChannelMessageEvent
 
 unsafeFirstArgument :: forall a. BareBones.ArgumentsJS -> a
-unsafeFirstArgument = flip AU.unsafeIndex 0 <<< unsafeCoerce
+unsafeFirstArgument args = unsafePartial (flip unsafeIndex 0 $ unsafeCoerce args)
 
 printInspect :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
 printInspect = log <<< inspect

@@ -1,7 +1,5 @@
 "use strict"
 
-// module Node.IRC.BareBones
-
 exports.createClient = function (host) {
   return function (nick) {
     return function (channels) {
