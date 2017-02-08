@@ -1,6 +1,5 @@
 module Node.IRC
-  ( IRC()
-  , Setup()
+  ( AffIRC()
   , Host(..), runHost
   , Channel(..), runChannel
   , MessageText(..), runMessageText
@@ -10,6 +9,8 @@ module Node.IRC
   , sayNick
   , ChannelMessageEvent()
   , onChannelMessage
+
+  , module ReExports
   ) where
 
 import Prelude
@@ -24,20 +25,18 @@ import Data.Array (unsafeIndex)
 
 import Node.IRC.BareBones as BareBones
 
--------------
 -- Re-exports
-
-type IRC = BareBones.IRC
+import Node.IRC.BareBones (IRC) as ReExports
 
 -----------
 -- The rest
 
-type Setup e a = ReaderT BareBones.Client (Aff (irc :: IRC, console :: CONSOLE | e)) a
+type AffIRC e a = ReaderT BareBones.Client (Aff (irc :: BareBones.IRC, console :: CONSOLE | e)) a
 
-runSetup :: forall e.
-  Setup e Unit -> BareBones.Client -> Eff (irc :: IRC, console :: CONSOLE | e) Unit
-runSetup setup client =
-  void $ runAff logShow pure (runReaderT setup client)
+runAffIRC :: forall e.
+  AffIRC e Unit -> BareBones.Client -> Eff (irc :: BareBones.IRC, console :: CONSOLE | e) Unit
+runAffIRC x client =
+  void $ runAff logShow pure (runReaderT x client)
 
 newtype Host = Host String
 
@@ -60,8 +59,8 @@ runNick :: Nick -> String
 runNick (Nick s) = s
 
 connect :: forall e.
-  Host -> Nick -> Channel -> Setup e Unit -> Aff (irc :: IRC, console :: CONSOLE | e) Unit
-connect (Host host) (Nick nick) chan setup = do
+  Host -> Nick -> Channel -> AffIRC e Unit -> Aff (irc :: BareBones.IRC, console :: CONSOLE | e) Unit
+connect (Host host) (Nick nick) chan x = do
   client <- liftEff $ do
     c <- BareBones.createClient host nick [runChannel chan]
     -- Add an error handler, because otherwise errors will crash the whole
@@ -74,7 +73,7 @@ connect (Host host) (Nick nick) chan setup = do
   waitForEvent client "join"
 
   -- Set it up
-  runReaderT setup client
+  runReaderT x client
 
   where
   waitForEvent client eventType =
@@ -83,12 +82,12 @@ connect (Host host) (Nick nick) chan setup = do
         { fromArgumentsJS: const unit, action: success }
 
 sayChannel :: forall e.
-  Channel -> MessageText -> Setup e Unit
+  Channel -> MessageText -> AffIRC e Unit
 sayChannel (Channel chan) (MessageText text) =
   ReaderT \client -> liftEff $ BareBones.say client chan text
 
 sayNick :: forall e.
-  BareBones.Client -> Nick -> MessageText -> Eff (irc :: IRC | e) Unit
+  BareBones.Client -> Nick -> MessageText -> Eff (irc :: BareBones.IRC | e) Unit
 sayNick client (Nick nick) (MessageText text) =
   BareBones.say client nick text
 
@@ -101,8 +100,8 @@ type ChannelMessageEvent =
 -- | channel.
 onChannelMessage :: forall e.
   Channel
-  -> (ChannelMessageEvent -> Setup e Unit)
-  -> Setup e Unit
+  -> (ChannelMessageEvent -> AffIRC e Unit)
+  -> AffIRC e Unit
 onChannelMessage chan cb =
   ReaderT \client -> liftEff $
     BareBones.addListener client
@@ -113,7 +112,7 @@ onChannelMessage chan cb =
     "message" <> runChannel c
   mkCallback client =
     { fromArgumentsJS: channelMessageFromArgumentsJS
-    , action: \event -> runSetup (cb event) client
+    , action: \event -> runAffIRC (cb event) client
     }
 
 foreign import channelMessageFromArgumentsJS ::
