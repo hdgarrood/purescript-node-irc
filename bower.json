@@ -1,5 +1,7 @@
 {
   "name": "purescript-node-irc",
+  "license": "MIT",
+  "author": "Harry Garrood <harry@garrood.me>",
   "moduleType": [
     "node"
   ],
