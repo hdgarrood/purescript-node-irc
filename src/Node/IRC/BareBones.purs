@@ -10,7 +10,7 @@ module Node.IRC.BareBones
   ) where
 
 import Prelude
-import Control.Monad.Eff
+import Control.Monad.Eff (Eff)
 
 foreign import data IRC :: !
 foreign import data Client :: *
