@@ -10,10 +10,10 @@ module Node.IRC.BareBones
   ) where
 
 import Prelude
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (kind Effect, Eff)
 
-foreign import data IRC :: !
-foreign import data Client :: *
+foreign import data IRC :: Effect
+foreign import data Client :: Type
 
 -- | Create an IRC client, by supplying a hostname, nick for the client to use,
 -- | and an array of channels to connect to.
@@ -28,9 +28,9 @@ foreign import createClient ::
   forall e. String -> String -> Array String -> Eff (irc :: IRC | e) Client
 
 -- | A JavaScript `arguments` object.
-foreign import data ArgumentsJS :: *
+foreign import data ArgumentsJS :: Type
 
--- | 
+-- |
 type IRCCallback e args =
   { fromArgumentsJS :: ArgumentsJS -> args
   , action :: args -> Eff (irc :: IRC | e) Unit
